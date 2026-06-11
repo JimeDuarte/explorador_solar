@@ -1,0 +1,9 @@
+nombre	latitud	longitud	altitud	zona_horaria	tipo_dato
+"Consolapa, Veracruz"	19.483	-96.958	1200	America/Mexico_City	Cliente / aproximado
+"Coatepec, Veracruz"	19.452	-96.961	1200	America/Mexico_City	Cliente / aproximado
+"Monterrey, Nuevo León"	25.6866	-100.3161	512	America/Monterrey	Predeterminado
+"Ciudad de México, CDMX"	19.4326	-99.1332	2240	America/Mexico_City	Predeterminado
+"Guadalajara, Jalisco"	20.6597	-103.3496	1566	America/Mexico_City	Predeterminado
+"Mérida, Yucatán"	20.9674	-89.5926	10	America/Merida	Predeterminado
+"Tijuana, Baja California"	32.5149	-117.0382	20	America/Tijuana	Predeterminado
+Manual	0	0	0	America/Mexico_City	Editable
