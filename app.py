@@ -896,22 +896,67 @@ def tarifas_html(tarifas):
     return html
 
 
+def limpiar_df_para_excel(df):
+    df = df.copy()
+
+    for col in df.columns:
+        if pd.api.types.is_datetime64tz_dtype(df[col]):
+            df[col] = df[col].dt.tz_localize(None)
+
+        elif pd.api.types.is_datetime64_any_dtype(df[col]):
+            try:
+                if getattr(df[col].dt, "tz", None) is not None:
+                    df[col] = df[col].dt.tz_localize(None)
+            except Exception:
+                pass
+
+        elif df[col].dtype == "object":
+            df[col] = df[col].apply(
+                lambda x: str(x) if isinstance(x, (list, dict, tuple, set)) else x
+            )
+
+    return df
+
+
 def dataframe_to_download(sheets: dict):
-    """Devuelve bytes, nombre de archivo y mime. Intenta Excel real; si no hay engine, usa ZIP con CSV."""
+    from io import BytesIO
+
     output = BytesIO()
+
     try:
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            for name, df_sheet in sheets.items():
-                safe = str(name)[:31]
-                df_sheet.to_excel(writer, sheet_name=safe, index=False)
-        return output.getvalue(), "explorador_solar_datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    except ModuleNotFoundError:
-        output = BytesIO()
-        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zf:
-            for name, df_sheet in sheets.items():
-                safe = str(name).replace("/", "_")[:45]
-                zf.writestr(f"{safe}.csv", df_sheet.to_csv(index=False).encode("utf-8-sig"))
-        return output.getvalue(), "explorador_solar_datos_csv.zip", "application/zip"
+            for sheet_name, df_sheet in sheets.items():
+                safe = str(sheet_name)[:31].replace("/", "-").replace("\\", "-")
+
+                if isinstance(df_sheet, pd.DataFrame):
+                    df_clean = limpiar_df_para_excel(df_sheet)
+                else:
+                    df_clean = limpiar_df_para_excel(pd.DataFrame(df_sheet))
+
+                df_clean.to_excel(writer, sheet_name=safe, index=False)
+
+        return (
+            output.getvalue(),
+            "datos_explorador_solar.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception:
+        first_name = list(sheets.keys())[0]
+        first_df = list(sheets.values())[0]
+
+        if not isinstance(first_df, pd.DataFrame):
+            first_df = pd.DataFrame(first_df)
+
+        first_df = limpiar_df_para_excel(first_df)
+
+        csv = first_df.to_csv(index=False).encode("utf-8-sig")
+
+        return (
+            csv,
+            f"{first_name}.csv",
+            "text/csv"
+        )
 
 
 def generar_pdf_resumen(resumen: dict):
