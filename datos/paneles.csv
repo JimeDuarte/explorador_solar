@@ -1,0 +1,6 @@
+modelo	marca	potencia_kw	area_m2	eficiencia	costo_estimado_mxn	tipo_dato
+LONGi Hi-MO 6 575W	LONGi	0.575	2.58	0.223	8500	Ficha técnica / costo supuesto
+Jinko Tiger Neo 585W	Jinko Solar	0.585	2.583	0.2265	8800	Ficha técnica / costo supuesto
+Trina Vertex 600W	Trina Solar	0.6	2.83	0.214	9000	Ficha técnica / costo supuesto
+Canadian Solar HiKu 550W	Canadian Solar	0.55	2.58	0.214	8200	Ficha técnica / costo supuesto
+Manual	Usuario	0.6	2.583	0.22	9150	Supuesto editable
