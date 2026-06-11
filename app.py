@@ -2101,8 +2101,7 @@ with tab_apagones:
         if not res:
             st.warning("Primero visualiza la pestaña de Paneles solares para estimar paneles equivalentes y consumo base.")
         else:
-            section_header("⚡", "Riesgo eléctrico y energía de respaldo", "Esta sección no diseña baterías; solo ayuda a dimensionar energía crítica y valor económico de continuidad.")
-            consumo_mensual_kwh = base.get("consumo_mensual_kwh", 0); energia_por_panel = res.get("energia_por_panel", 0)
+            section_header("⚡", "Riesgo eléctrico y energía de respaldo", "Esta sección estima la capacidad preliminar de batería necesaria para proteger cargas críticas durante apagones.")            consumo_mensual_kwh = base.get("consumo_mensual_kwh", 0); energia_por_panel = res.get("energia_por_panel", 0)
             umbral_riesgo_min = st.number_input("¿A partir de cuántos minutos sin luz ya se vuelve un riesgo?", min_value=0.0, value=5.0)
             aviso_min = st.number_input("¿Con cuántos minutos de antelación necesitarías recibir aviso para actuar a tiempo?", min_value=0.0, value=10.0)
             modo_carga = st.radio("¿Sabes cuánta carga crítica necesitas proteger?", ["Sí, conozco la carga crítica en kW", "No, estimarla como porcentaje de mi consumo"], horizontal=True)
@@ -2115,25 +2114,31 @@ with tab_apagones:
                 carga_critica_kw = consumo_promedio_kw * (porcentaje_critico / 100)
                 st.caption(f"Potencia promedio: {consumo_promedio_kw:.2f} kW | carga crítica estimada: {carga_critica_kw:.2f} kW")
 
-            with st.expander("💡 Para saber más: clasificación usada"):
-                st.markdown("""
-                - **Corto:** 1 a 5 minutos. Riesgo de reinicio o pérdida momentánea de control.  
-                - **Medio:** 5 a 60 minutos. Riesgo de detener procesos o afectar equipos críticos.  
-                - **Largo:** más de 60 minutos. Riesgo de continuidad operativa, conservación o producción.
-                """)
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                apagones_cortos = st.number_input("Apagones cortos por año", min_value=0, value=24)
-                duracion_corto_min = st.number_input("Duración corto (min)", min_value=0.0, value=3.0)
-            with c2:
-                apagones_medios = st.number_input("Apagones medios por año", min_value=0, value=12)
-                duracion_medio_min = st.number_input("Duración medio (min)", min_value=0.0, value=30.0)
-            with c3:
-                apagones_largos = st.number_input("Apagones largos por año", min_value=0, value=3)
-                duracion_largo_min = st.number_input("Duración largo (min)", min_value=0.0, value=120.0)
-            horas_respaldo_anual = apagones_cortos*duracion_corto_min/60 + apagones_medios*duracion_medio_min/60 + apagones_largos*duracion_largo_min/60
-            energia_respaldo_kwh = carga_critica_kw * horas_respaldo_anual
+            st.markdown("### 🔋 Dimensionamiento preliminar de batería")
+
+            horas_respaldo_evento = st.slider(
+                "¿Cuántas horas quieres que dure la batería durante un apagón?",
+                min_value=1,
+                max_value=24,
+                value=4,
+                step=1,
+                help="Tiempo de autonomía deseado para mantener funcionando las cargas críticas sin suministro de CFE."
+            )
+
+            margen_seguridad = st.slider(
+                "Margen de seguridad para la batería (%)",
+                min_value=10,
+                max_value=40,
+                value=20,
+                step=5,
+                help="Margen adicional para evitar que la batería trabaje al límite."
+            )
+
+            energia_base_respaldo_kwh = carga_critica_kw * horas_respaldo_evento
+            energia_respaldo_kwh = energia_base_respaldo_kwh * (1 + margen_seguridad / 100)
+
             paneles_equivalentes_respaldo = int(np.ceil(energia_respaldo_kwh / energia_por_panel)) if energia_por_panel > 0 else 0
+            horas_respaldo_anual = horas_respaldo_evento
             a1, a2, a3, a4 = st.columns(4)
             a1.metric("Minutos de riesgo", f"> {umbral_riesgo_min:.0f} min")
             a2.metric("Aviso deseado", f"{aviso_min:.0f} min antes")
@@ -2145,8 +2150,8 @@ with tab_apagones:
             with st.expander("🤖 Agente preliminar de continuidad"):
                 st.caption("El agente interpreta lo que ya capturaste en la interfaz y genera una lectura preliminar.")
                 contexto_agente = "Análisis automático con datos de consumo, paneles, cobertura, apagones, pérdidas y carga crítica capturados en la app."
-                autonomia_evento_h = max((umbral_riesgo_min + aviso_min) / 60, duracion_medio_min / 60, duracion_largo_min / 60, 0.25)
-                bateria_recomendada_kwh = carga_critica_kw * autonomia_evento_h * 1.20
+                autonomia_evento_h = horas_respaldo_evento
+                bateria_recomendada_kwh = energia_respaldo_kwh
                 baterias_modulo_kwh = 10.0
                 modulos_bateria = int(np.ceil(bateria_recomendada_kwh / baterias_modulo_kwh)) if baterias_modulo_kwh > 0 else 0
                 objetivo_paneles = res.get("objetivo_cobertura", 100)
@@ -2172,8 +2177,19 @@ with tab_apagones:
                 st.markdown('<div class="agent-card"><h3>Lectura del agente con tus datos</h3><ul>' + ''.join([f'<li>{r}</li>' for r in recomendaciones]) + '</ul></div>', unsafe_allow_html=True)
                 st.session_state["agente_continuidad"] = {"bateria_recomendada_kwh": bateria_recomendada_kwh, "modulos_bateria": modulos_bateria, "paneles_extra_sugeridos": paneles_extra, "autonomia_evento_h": autonomia_evento_h, "recomendaciones": " | ".join(recomendaciones)}
 
-            st.session_state["apagones_results"] = {"umbral_riesgo_min": umbral_riesgo_min, "aviso_min": aviso_min, "carga_critica_kw": carga_critica_kw, "horas_respaldo_anual": horas_respaldo_anual, "energia_respaldo_kwh": energia_respaldo_kwh, "paneles_equivalentes_respaldo": paneles_equivalentes_respaldo, "contexto_agente": contexto_agente, "bateria_recomendada_kwh": st.session_state.get("agente_continuidad", {}).get("bateria_recomendada_kwh", ""), "modulos_bateria": st.session_state.get("agente_continuidad", {}).get("modulos_bateria", ""), "paneles_extra_sugeridos": st.session_state.get("agente_continuidad", {}).get("paneles_extra_sugeridos", "")}
-
+                st.session_state["apagones_results"] = {
+                    "umbral_riesgo_min": umbral_riesgo_min,
+                    "aviso_min": aviso_min,
+                    "carga_critica_kw": carga_critica_kw,
+                    "horas_respaldo_evento": horas_respaldo_evento,
+                    "margen_seguridad": margen_seguridad,
+                    "energia_respaldo_kwh": energia_respaldo_kwh,
+                    "paneles_equivalentes_respaldo": paneles_equivalentes_respaldo,
+                    "contexto_agente": contexto_agente,
+                    "bateria_recomendada_kwh": st.session_state.get("agente_continuidad", {}).get("bateria_recomendada_kwh", ""),
+                    "modulos_bateria": st.session_state.get("agente_continuidad", {}).get("modulos_bateria", ""),
+                    "paneles_extra_sugeridos": st.session_state.get("agente_continuidad", {}).get("paneles_extra_sugeridos", "")
+                }
 
 
 st.markdown("""
