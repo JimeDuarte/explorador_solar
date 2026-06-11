@@ -2018,19 +2018,13 @@ with tab_dashboard:
                 peor_mes = "No calculado"
                 reduccion_clima = float(res.get("reduccion_gasto", 0))
 
-            potencia_instalada_kw = numero_paneles * potencia_panel_kw
-
-            factor_planta = 0
-
-            if potencia_instalada_kw > 0:
-                factor_planta = energia_generada_anual / (potencia_instalada_kw * 8760)
             
-            c1, c2, c3, c4, c5 = st.columns(5)
+            c1, c2, c3, c4 = st.columns(4)
             c1.metric("Paneles", f"{paneles}")
             c2.metric("Cobertura", f"{cobertura:.1f}%")
             c3.metric("Área aprox.", f"{area:,.1f} m²")
             c4.metric("Reducción estimada", f"{reduccion_clima:.1f}%")
-            c5.metric("Factor de planta", f"{factor_planta*100:.1f}%")
+
             reporte_texto = f"""
             Explorador Solar es una herramienta digital de diagnóstico preliminar para que usuarios residenciales, comercios e industrias comprendan cómo podría comportarse un sistema fotovoltaico antes de solicitar una ingeniería o cotización formal. En este escenario, el proyecto se evaluó para {ubicacion}, con una tarifa de referencia {tarifa}, un precio promedio usado de ${precio:.2f}/kWh, un consumo mensual estimado de {consumo_mensual:,.0f} kWh y un consumo anual aproximado de {consumo_anual:,.0f} kWh. La propuesta no vende una solución cerrada; ofrece una lectura clara del consumo, generación solar, efecto climatológico, área requerida y riesgos por interrupciones eléctricas para apoyar una primera toma de decisiones.
 
