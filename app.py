@@ -2101,7 +2101,8 @@ with tab_apagones:
         if not res:
             st.warning("Primero visualiza la pestaña de Paneles solares para estimar paneles equivalentes y consumo base.")
         else:
-            section_header("⚡", "Riesgo eléctrico y energía de respaldo", "Esta sección estima la capacidad preliminar de batería necesaria para proteger cargas críticas durante apagones.")            consumo_mensual_kwh = base.get("consumo_mensual_kwh", 0); energia_por_panel = res.get("energia_por_panel", 0)
+            section_header("⚡", "Riesgo eléctrico y energía de respaldo", "Esta sección estima la capacidad preliminar de batería necesaria para proteger cargas críticas durante apagones.")            
+            consumo_mensual_kwh = base.get("consumo_mensual_kwh", 0); energia_por_panel = res.get("energia_por_panel", 0)
             umbral_riesgo_min = st.number_input("¿A partir de cuántos minutos sin luz ya se vuelve un riesgo?", min_value=0.0, value=5.0)
             aviso_min = st.number_input("¿Con cuántos minutos de antelación necesitarías recibir aviso para actuar a tiempo?", min_value=0.0, value=10.0)
             modo_carga = st.radio("¿Sabes cuánta carga crítica necesitas proteger?", ["Sí, conozco la carga crítica en kW", "No, estimarla como porcentaje de mi consumo"], horizontal=True)
