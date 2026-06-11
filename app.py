@@ -1111,14 +1111,11 @@ def orientacion_recomendada_por_ubicacion(latitud, longitud):
     la optimización 3D sigue siendo el método más robusto para afinar el azimut.
     """
     latitud = float(latitud)
-    longitud = float(longitud)
-    base = 180.0 if latitud >= 0 else 0.0
-    meridiano_local = round(longitud / 15.0) * 15.0
-    ajuste = max(min((longitud - meridiano_local) * 0.75, 12.0), -12.0)
-    if abs(latitud) < 3:
-        base = 180.0 if longitud < 0 else 0.0
-        ajuste = 0.0
-    return (base + ajuste) % 360
+
+    if latitud >= 0:
+        return 180.0
+    else:
+        return 0.0
 
 def preparar_comparativo_mensual(df_solar, consumo_mensual_kwh, precio_kwh, factores_clima):
     energia_mensual = df_solar[["potencia_solar_kw"]].resample("ME").sum() * 0.25
